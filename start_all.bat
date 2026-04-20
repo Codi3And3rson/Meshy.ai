@@ -1,0 +1,13 @@
+@echo off
+echo Starting Backend...
+start "Backend" cmd /k "cd backend && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8010"
+
+echo Starting Frontend...
+start "Frontend" cmd /k "cd frontend && npm run dev"
+
+echo Waiting for services to start...
+timeout /t 5
+
+echo Opening Browser...
+start http://localhost:5173
+pause

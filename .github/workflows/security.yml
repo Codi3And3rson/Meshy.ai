@@ -1,0 +1,36 @@
+name: Security
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    - name: Run npm audit
+      run: |
+        cd frontend
+        npm install --package-lock-only
+        npm audit || echo "Audit found vulnerabilities, check details."
+
+    - name: Run check Python dependencies
+      run: |
+        cd backend
+        pip install safety
+        safety check -r requirements.txt || echo "Safety check found vulnerabilities, check details."
