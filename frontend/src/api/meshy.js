@@ -16,13 +16,6 @@ export const meshy = {
         apiFetch("/api/text-to-3d", { apiKey, method: "POST", body: payload }),
 
     /**
-     * Backward-compatible (your current UI already uses this)
-     * Backend maps to: createTextTo3D({ mode:"preview", ...payload })
-     */
-    createTextPreview: (apiKey, payload) =>
-        apiFetch("/api/text-to-3d/preview", { apiKey, method: "POST", body: payload }),
-
-    /**
      * Convenience helper: refine using a preview_task_id
      */
     refineText: (apiKey, previewTaskId, payload = {}) =>
