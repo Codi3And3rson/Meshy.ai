@@ -22,16 +22,6 @@ export const meshy = {
     createTextPreview: (apiKey, payload) =>
         apiFetch("/api/text-to-3d/preview", { apiKey, method: "POST", body: payload }),
 
-    /**
-     * Convenience helper: refine using a preview_task_id
-     */
-    refineText: (apiKey, previewTaskId, payload = {}) =>
-        apiFetch("/api/text-to-3d", {
-            apiKey,
-            method: "POST",
-            body: { mode: "refine", preview_task_id: previewTaskId, ...payload },
-        }),
-
     getTextTask: (apiKey, taskId) =>
         apiFetch(`/api/text-to-3d/${taskId}`, { apiKey }),
 
