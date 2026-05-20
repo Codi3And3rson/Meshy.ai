@@ -142,14 +142,14 @@ def _validate_download_url(url: str) -> None:
       - host must be allowed
     """
     try:
-        u = urlparse(url)
+        u = httpx.URL(url)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid download URL")
 
     if u.scheme not in ("http", "https"):
         raise HTTPException(status_code=400, detail="Download URL must be http/https")
 
-    host = (u.hostname or "").lower()
+    host = u.host.lower()
     if not host:
         raise HTTPException(status_code=400, detail="Download URL missing host")
 
