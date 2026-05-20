@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
+import logging.handlers
+import queue
 import os
 from typing import Any
 
@@ -22,6 +25,15 @@ MESHY_BASE = os.getenv("MESHY_BASE", "https://api.meshy.ai").rstrip("/")
 # Optional: set a server-side Meshy API key so you *don't* need to send keys from the browser
 # If provided, backend will always use this key (recommended for production).
 SERVER_MESHY_API_KEY = os.getenv("MESHY_API_KEY", "").strip() or None
+
+# Configure non-blocking async logger using QueueHandler
+log_queue = queue.Queue(-1)
+queue_handler = logging.handlers.QueueHandler(log_queue)
+logger = logging.getLogger(__name__)
+logger.addHandler(queue_handler)
+logger.setLevel(logging.INFO)
+queue_listener = logging.handlers.QueueListener(log_queue, logging.StreamHandler())
+queue_listener.start()
 
 # Networking
 HTTP_TIMEOUT_SECONDS = float(os.getenv("HTTP_TIMEOUT_SECONDS", "60"))
@@ -650,7 +662,7 @@ async def meshy_webhook(request: Request):
         payload = await request.body()
         payload = payload.decode("utf-8", errors="replace")
 
-    print("[meshy-webhook]", payload)
+    logger.info("[meshy-webhook] %s", payload)
     return {"ok": True}
 
 
