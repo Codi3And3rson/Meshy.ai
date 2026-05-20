@@ -94,6 +94,8 @@ def _extract_bearer_token(authorization: str | None) -> str | None:
     if a.lower().startswith("bearer "):
         tok = a.split(" ", 1)[1].strip()
         return tok or None
+    if a.lower() == "bearer":
+        return None
     return a
 
 
