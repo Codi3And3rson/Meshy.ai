@@ -4,6 +4,7 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import time
 from typing import Any
 
 from dotenv import load_dotenv
@@ -376,12 +377,22 @@ async def health():
 
 
 # Optional but super useful for verifying key + credits
+_balance_cache: dict[str, tuple[float, dict]] = {}
+BALANCE_CACHE_TTL = 60.0
+
 @app.get("/api/balance")
 async def balance(
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
 ):
     api_key = _require_api_key(x_meshy_key, authorization)
+
+    now = time.time()
+    if api_key in _balance_cache:
+        cached_time, cached_data = _balance_cache[api_key]
+        if now - cached_time < BALANCE_CACHE_TTL:
+            return cached_data
+
     client: httpx.AsyncClient = app.state.http
 
     resp = await _request_with_retries(
@@ -392,7 +403,10 @@ async def balance(
     )
     if resp.status_code >= 400:
         raise _http_error_from_meshy(resp)
-    return resp.json()
+
+    data = resp.json()
+    _balance_cache[api_key] = (now, data)
+    return data
 
 
 # --- Download Proxy (fixes browser CORS "Failed to fetch") ---
