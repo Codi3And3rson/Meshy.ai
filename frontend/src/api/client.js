@@ -35,14 +35,17 @@ export async function apiFetch(path, { apiKey, method = "GET", body, headers } =
         body: body ? JSON.stringify(body) : undefined,
     });
 
-    const text = await res.text();
     let data = null;
 
-    if (text) {
+    if (res.status !== 204) {
+        const textRes = res.clone();
         try {
-            data = JSON.parse(text);
+            data = await res.json();
         } catch {
-            data = { raw: text };
+            const text = await textRes.text();
+            if (text) {
+                data = { raw: text };
+            }
         }
     }
 
