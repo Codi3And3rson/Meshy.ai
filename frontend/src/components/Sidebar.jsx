@@ -1,5 +1,5 @@
 import React from "react";
-import { LogOut, Moon, TimerReset, Sparkles, Image as ImageIcon, Type, Box } from "lucide-react";
+import { LogOut, Moon, TimerReset, Image as ImageIcon, Type, Box } from "lucide-react";
 import Tip from "./Tooltip";
 import { motion } from "framer-motion";
 
