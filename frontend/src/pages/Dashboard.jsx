@@ -5,7 +5,7 @@ import TextPanel from "../components/TextPanel";
 import ImagePanel from "../components/ImagePanel";
 import TasksPanel from "../components/TasksPanel";
 import { meshy } from "../api/meshy";
-import { apiDownload } from "../api/client";
+import { apiDownload, apiDownloadResponse } from "../api/client";
 
 // New Components
 import Sidebar from "../components/Sidebar";
@@ -169,9 +169,31 @@ export default function Dashboard() {
         setBusy(true);
         setError("");
         try {
-            const blob = await apiDownload(url);
             const extMap = { glb: "model.glb", fbx: "model.fbx", obj: "model.obj", usdz: "model.usdz", mtl: "model.mtl", pre_remeshed_glb: "pre_remeshed_model.glb" };
             const name = filenameFromUrl(url, extMap[keyHint] || "model.bin");
+
+            if (window.showSaveFilePicker) {
+                try {
+                    const res = await apiDownloadResponse(url);
+                    const handle = await window.showSaveFilePicker({ suggestedName: name });
+                    const writable = await handle.createWritable();
+                    try {
+                        await res.body.pipeTo(writable);
+                    } catch (pipeErr) {
+                        await writable.abort();
+                        throw pipeErr;
+                    }
+                    return;
+                } catch (err) {
+                    if (err.name === 'AbortError') return;
+                    // For AbortError (user cancelled save dialog), we just exit.
+                    // If network fails before save dialog, or if there's an error during piping,
+                    // we can fall back or throw.
+                    // Fall back to Blob download on other errors
+                }
+            }
+
+            const blob = await apiDownload(url);
             await triggerBrowserDownload(blob, name);
         } catch (e) {
             setError(`${e?.message}\nFalling back to direct download.`);

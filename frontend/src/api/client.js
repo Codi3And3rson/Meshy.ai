@@ -54,8 +54,13 @@ export async function apiFetch(path, { apiKey, method = "GET", body, headers } =
     return data;
 }
 
-export async function apiDownload(url) {
+export async function apiDownloadResponse(url) {
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Download failed (${res.status})`);
+    return res;
+}
+
+export async function apiDownload(url) {
+    const res = await apiDownloadResponse(url);
     return await res.blob();
 }
