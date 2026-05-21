@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useMemo } from "react";
 import Tip from "./Tooltip";
 import { Download, FileBox } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Downloads({ modelUrls, detectedModelUrl, downloadFile, downloadActivePreferred, busy }) {
-    const hasDownloads = Object.keys(modelUrls).length > 0;
+    const modelEntries = useMemo(() => Object.entries(modelUrls || {}), [modelUrls]);
+    const hasDownloads = modelEntries.length > 0;
 
     return (
         <div className="glass-panel" style={{ padding: '24px' }}>
@@ -30,7 +31,7 @@ export default function Downloads({ modelUrls, detectedModelUrl, downloadFile, d
                 </div>
             ) : (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
-                    {Object.entries(modelUrls).map(([k, url]) => (
+                    {modelEntries.map(([k, url]) => (
                         <Tip key={k} content={`Download ${k.toUpperCase()} file`}>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
