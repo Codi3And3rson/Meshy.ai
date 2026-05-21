@@ -2,19 +2,21 @@
 from __future__ import annotations
 
 import asyncio
+import hmac
+import hashlib
 import json
 import os
 from typing import Any
 
-from dotenv import load_dotenv
-load_dotenv()
 from urllib.parse import urlparse, unquote
-
+from dotenv import load_dotenv
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
+
+load_dotenv()
 
 # Meshy API base URL (docs use https://api.meshy.ai)
 MESHY_BASE = os.getenv("MESHY_BASE", "https://api.meshy.ai").rstrip("/")
@@ -22,6 +24,8 @@ MESHY_BASE = os.getenv("MESHY_BASE", "https://api.meshy.ai").rstrip("/")
 # Optional: set a server-side Meshy API key so you *don't* need to send keys from the browser
 # If provided, backend will always use this key (recommended for production).
 SERVER_MESHY_API_KEY = os.getenv("MESHY_API_KEY", "").strip() or None
+
+MESHY_WEBHOOK_SECRET = os.getenv("MESHY_WEBHOOK_SECRET", "").strip() or None
 
 # Networking
 HTTP_TIMEOUT_SECONDS = float(os.getenv("HTTP_TIMEOUT_SECONDS", "60"))
@@ -39,7 +43,9 @@ ASSET_RETENTION_DAYS = 3  # informational only
 MAX_DATA_URL_CHARS = int(os.getenv("MAX_DATA_URL_CHARS", "8000000"))  # ~8M chars
 
 # Download proxy limits/safety
-MAX_DOWNLOAD_BYTES = int(os.getenv("MAX_DOWNLOAD_BYTES", str(1024 * 1024 * 1024)))  # 1GB default
+MAX_DOWNLOAD_BYTES = int(
+    os.getenv("MAX_DOWNLOAD_BYTES", str(1024 * 1024 * 1024))
+)  # 1GB default
 ALLOWED_DOWNLOAD_HOSTS = [
     h.strip().lower()
     for h in os.getenv("ALLOWED_DOWNLOAD_HOSTS", "assets.meshy.ai").split(",")
@@ -177,7 +183,12 @@ def normalize_task(raw: dict) -> dict:
       - thumbnail_url (when present; checks nested result/output too)
       - raw (original task payload)
     """
-    status = raw.get("status") or raw.get("result", {}).get("status") or raw.get("state") or "UNKNOWN"
+    status = (
+        raw.get("status")
+        or raw.get("result", {}).get("status")
+        or raw.get("state")
+        or "UNKNOWN"
+    )
     status = str(status).upper()
 
     def pick_model_urls(d: dict) -> dict[str, str]:
@@ -232,7 +243,7 @@ def normalize_task(raw: dict) -> dict:
 
     return {
         "status": status,
-        "model": model,            # can be None until ready
+        "model": model,  # can be None until ready
         "model_urls": model_urls,  # {} until ready
         "thumbnail_url": thumb,
         "raw": raw,
@@ -262,8 +273,12 @@ async def _request_with_retries(
         try:
             resp = await client.request(method_u, url, headers=headers, json=json_body)
 
-            if idempotent and resp.status_code in (429, 500, 502, 503, 504) and attempt < MAX_RETRIES:
-                delay = (RETRY_BASE_DELAY_SECONDS * (2 ** attempt)) + (0.05 * attempt)
+            if (
+                idempotent
+                and resp.status_code in (429, 500, 502, 503, 504)
+                and attempt < MAX_RETRIES
+            ):
+                delay = (RETRY_BASE_DELAY_SECONDS * (2**attempt)) + (0.05 * attempt)
                 attempt += 1
                 await asyncio.sleep(delay)
                 continue
@@ -272,11 +287,14 @@ async def _request_with_retries(
 
         except (httpx.TimeoutException, httpx.TransportError) as exc:
             if attempt < MAX_RETRIES:
-                delay = (RETRY_BASE_DELAY_SECONDS * (2 ** attempt)) + (0.05 * attempt)
+                delay = (RETRY_BASE_DELAY_SECONDS * (2**attempt)) + (0.05 * attempt)
                 attempt += 1
                 await asyncio.sleep(delay)
                 continue
-            raise HTTPException(status_code=502, detail=f"Upstream network error talking to Meshy: {exc!s}") from exc
+            raise HTTPException(
+                status_code=502,
+                detail=f"Upstream network error talking to Meshy: {exc!s}",
+            ) from exc
 
 
 # ---------- Request Models ----------
@@ -349,6 +367,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -416,7 +435,9 @@ async def download_proxy(
     try:
         upstream = await client.stream("GET", url, headers={"Accept": "*/*"})
     except (httpx.TimeoutException, httpx.TransportError) as exc:
-        raise HTTPException(status_code=502, detail=f"Upstream download error: {exc!s}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Upstream download error: {exc!s}"
+        ) from exc
 
     # If upstream errors, surface readable detail
     if upstream.status_code >= 400:
@@ -424,7 +445,10 @@ async def download_proxy(
         body = await upstream.aread()
         text = body[:2000].decode("utf-8", errors="replace")
         await upstream.aclose()
-        raise HTTPException(status_code=upstream.status_code, detail={"message": "Upstream error", "raw": text})
+        raise HTTPException(
+            status_code=upstream.status_code,
+            detail={"message": "Upstream error", "raw": text},
+        )
 
     # Content metadata
     content_type = upstream.headers.get("content-type") or "application/octet-stream"
@@ -434,7 +458,10 @@ async def download_proxy(
             n = int(content_length)
             if n > MAX_DOWNLOAD_BYTES:
                 await upstream.aclose()
-                raise HTTPException(status_code=413, detail=f"File too large ({n} bytes). Max is {MAX_DOWNLOAD_BYTES}.")
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large ({n} bytes). Max is {MAX_DOWNLOAD_BYTES}.",
+                )
         except ValueError:
             pass
 
@@ -449,7 +476,10 @@ async def download_proxy(
             total += len(chunk)
             if total > MAX_DOWNLOAD_BYTES:
                 await upstream.aclose()
-                raise HTTPException(status_code=413, detail=f"File exceeded max size ({MAX_DOWNLOAD_BYTES} bytes).")
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File exceeded max size ({MAX_DOWNLOAD_BYTES} bytes).",
+                )
             yield chunk
         await upstream.aclose()
 
@@ -473,10 +503,14 @@ async def create_text_to_3d(
 
     if body.mode == "preview":
         if not body.prompt:
-            raise HTTPException(status_code=422, detail="prompt is required when mode=preview")
+            raise HTTPException(
+                status_code=422, detail="prompt is required when mode=preview"
+            )
     else:
         if not body.preview_task_id:
-            raise HTTPException(status_code=422, detail="preview_task_id is required when mode=refine")
+            raise HTTPException(
+                status_code=422, detail="preview_task_id is required when mode=refine"
+            )
 
     payload: dict[str, Any] = {"mode": body.mode}
 
@@ -639,16 +673,40 @@ async def get_image_to_3d_task(
 
 # --- Webhook receiver (optional) ---
 @app.post("/api/meshy/webhook")
-async def meshy_webhook(request: Request):
+async def meshy_webhook(
+    request: Request,
+    x_meshy_signature: str | None = Header(default=None),
+):
     """
     Meshy can POST task objects to your webhook URL when statuses change.
     This endpoint simply acknowledges receipt and returns <400 to prevent auto-disable.
     """
+    raw_body = await request.body()
+
+    if MESHY_WEBHOOK_SECRET:
+        if not x_meshy_signature:
+            raise HTTPException(
+                status_code=401, detail="Missing X-Meshy-Signature header"
+            )
+
+        # Meshy docs specify using HMAC SHA256
+        secret_bytes = MESHY_WEBHOOK_SECRET.encode("utf-8")
+        expected_signature = hmac.new(
+            secret_bytes, raw_body, hashlib.sha256
+        ).hexdigest()
+
+        # Sometimes signatures have a prefix, e.g. "sha256="
+        provided_sig = x_meshy_signature
+        if provided_sig.startswith("sha256="):
+            provided_sig = provided_sig[7:]
+
+        if not hmac.compare_digest(expected_signature, provided_sig):
+            raise HTTPException(status_code=401, detail="Invalid signature")
+
     try:
-        payload = await request.json()
+        payload = json.loads(raw_body.decode("utf-8"))
     except Exception:
-        payload = await request.body()
-        payload = payload.decode("utf-8", errors="replace")
+        payload = raw_body.decode("utf-8", errors="replace")
 
     print("[meshy-webhook]", payload)
     return {"ok": True}
