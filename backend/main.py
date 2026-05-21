@@ -439,6 +439,7 @@ async def download_proxy(
             pass
 
     out_name = (filename or "").strip() or _filename_from_url(url, "download.bin")
+    out_name = out_name.replace('"', "_").replace("\r", "").replace("\n", "")
 
     # Stream with size guard
     async def iter_bytes():
