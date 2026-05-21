@@ -36,7 +36,8 @@ function detectModelUrl(taskRaw) {
     return candidates[0] || "";
 }
 
-function extractModelUrls(taskRaw) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function extractModelUrls(taskRaw) {
     if (!taskRaw) return {};
     const t = taskRaw;
     const mu = t?.model_urls || t?.result?.model_urls || t?.output?.model_urls || t?.modelUrls || {};
