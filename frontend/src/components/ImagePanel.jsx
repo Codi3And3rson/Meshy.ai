@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import Tip from "./Tooltip";
 import { Image as ImgIcon, Upload, Link } from "lucide-react";
 
-function fileToDataUrl(file) {
+export function fileToDataUrl(file) {
     return new Promise((resolve, reject) => {
         const r = new FileReader();
         r.onerror = reject;
