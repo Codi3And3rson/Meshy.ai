@@ -7,6 +7,7 @@ import os
 from typing import Any
 
 from dotenv import load_dotenv
+
 load_dotenv()
 from urllib.parse import urlparse, unquote
 
@@ -39,7 +40,9 @@ ASSET_RETENTION_DAYS = 3  # informational only
 MAX_DATA_URL_CHARS = int(os.getenv("MAX_DATA_URL_CHARS", "8000000"))  # ~8M chars
 
 # Download proxy limits/safety
-MAX_DOWNLOAD_BYTES = int(os.getenv("MAX_DOWNLOAD_BYTES", str(1024 * 1024 * 1024)))  # 1GB default
+MAX_DOWNLOAD_BYTES = int(
+    os.getenv("MAX_DOWNLOAD_BYTES", str(1024 * 1024 * 1024))
+)  # 1GB default
 ALLOWED_DOWNLOAD_HOSTS = [
     h.strip().lower()
     for h in os.getenv("ALLOWED_DOWNLOAD_HOSTS", "assets.meshy.ai").split(",")
@@ -166,20 +169,17 @@ def _validate_download_url(url: str) -> None:
         )
 
 
-def normalize_task(raw: dict) -> dict:
-    """
-    Normalize task responses so the frontend can reliably find model download URLs.
+def _extract_status(raw: dict) -> str:
+    status = (
+        raw.get("status")
+        or raw.get("result", {}).get("status")
+        or raw.get("state")
+        or "UNKNOWN"
+    )
+    return str(status).upper()
 
-    Adds:
-      - status (UPPERCASE)
-      - model: { download_url, format } (best-effort default)
-      - model_urls: { glb, fbx, obj, usdz, mtl, pre_remeshed_glb } (when present)
-      - thumbnail_url (when present; checks nested result/output too)
-      - raw (original task payload)
-    """
-    status = raw.get("status") or raw.get("result", {}).get("status") or raw.get("state") or "UNKNOWN"
-    status = str(status).upper()
 
+def _extract_model_urls(raw: dict) -> dict[str, str]:
     def pick_model_urls(d: dict) -> dict[str, str]:
         mu = d.get("model_urls")
         if not isinstance(mu, dict):
@@ -200,7 +200,10 @@ def normalize_task(raw: dict) -> dict:
                 model_urls = pick_model_urls(d)
                 if model_urls:
                     break
+    return model_urls
 
+
+def _extract_model(raw: dict, model_urls: dict[str, str]) -> dict | None:
     # Choose a default download url preference order
     preferred_order = ["glb", "fbx", "obj", "usdz", "pre_remeshed_glb"]
     model = None
@@ -217,7 +220,10 @@ def normalize_task(raw: dict) -> dict:
             if isinstance(v, str) and v.startswith("http"):
                 model = {"download_url": v, "format": fmt}
                 break
+    return model
 
+
+def _extract_thumbnail(raw: dict) -> str | None:
     # thumbnail can appear in top-level, result, or output
     thumb = raw.get("thumbnail_url")
     if not (isinstance(thumb, str) and thumb.startswith("http")):
@@ -229,10 +235,29 @@ def normalize_task(raw: dict) -> dict:
                 if isinstance(t2, str) and t2.startswith("http"):
                     thumb = t2
                     break
+    return thumb
+
+
+def normalize_task(raw: dict) -> dict:
+    """
+    Normalize task responses so the frontend can reliably find model download URLs.
+
+    Adds:
+      - status (UPPERCASE)
+      - model: { download_url, format } (best-effort default)
+      - model_urls: { glb, fbx, obj, usdz, mtl, pre_remeshed_glb } (when present)
+      - thumbnail_url (when present; checks nested result/output too)
+      - raw (original task payload)
+    """
+    status = _extract_status(raw)
+
+    model_urls = _extract_model_urls(raw)
+    model = _extract_model(raw, model_urls)
+    thumb = _extract_thumbnail(raw)
 
     return {
         "status": status,
-        "model": model,            # can be None until ready
+        "model": model,  # can be None until ready
         "model_urls": model_urls,  # {} until ready
         "thumbnail_url": thumb,
         "raw": raw,
@@ -262,8 +287,12 @@ async def _request_with_retries(
         try:
             resp = await client.request(method_u, url, headers=headers, json=json_body)
 
-            if idempotent and resp.status_code in (429, 500, 502, 503, 504) and attempt < MAX_RETRIES:
-                delay = (RETRY_BASE_DELAY_SECONDS * (2 ** attempt)) + (0.05 * attempt)
+            if (
+                idempotent
+                and resp.status_code in (429, 500, 502, 503, 504)
+                and attempt < MAX_RETRIES
+            ):
+                delay = (RETRY_BASE_DELAY_SECONDS * (2**attempt)) + (0.05 * attempt)
                 attempt += 1
                 await asyncio.sleep(delay)
                 continue
@@ -272,11 +301,14 @@ async def _request_with_retries(
 
         except (httpx.TimeoutException, httpx.TransportError) as exc:
             if attempt < MAX_RETRIES:
-                delay = (RETRY_BASE_DELAY_SECONDS * (2 ** attempt)) + (0.05 * attempt)
+                delay = (RETRY_BASE_DELAY_SECONDS * (2**attempt)) + (0.05 * attempt)
                 attempt += 1
                 await asyncio.sleep(delay)
                 continue
-            raise HTTPException(status_code=502, detail=f"Upstream network error talking to Meshy: {exc!s}") from exc
+            raise HTTPException(
+                status_code=502,
+                detail=f"Upstream network error talking to Meshy: {exc!s}",
+            ) from exc
 
 
 # ---------- Request Models ----------
@@ -349,6 +381,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 @app.middleware("http")
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -416,7 +449,9 @@ async def download_proxy(
     try:
         upstream = await client.stream("GET", url, headers={"Accept": "*/*"})
     except (httpx.TimeoutException, httpx.TransportError) as exc:
-        raise HTTPException(status_code=502, detail=f"Upstream download error: {exc!s}") from exc
+        raise HTTPException(
+            status_code=502, detail=f"Upstream download error: {exc!s}"
+        ) from exc
 
     # If upstream errors, surface readable detail
     if upstream.status_code >= 400:
@@ -424,7 +459,10 @@ async def download_proxy(
         body = await upstream.aread()
         text = body[:2000].decode("utf-8", errors="replace")
         await upstream.aclose()
-        raise HTTPException(status_code=upstream.status_code, detail={"message": "Upstream error", "raw": text})
+        raise HTTPException(
+            status_code=upstream.status_code,
+            detail={"message": "Upstream error", "raw": text},
+        )
 
     # Content metadata
     content_type = upstream.headers.get("content-type") or "application/octet-stream"
@@ -434,7 +472,10 @@ async def download_proxy(
             n = int(content_length)
             if n > MAX_DOWNLOAD_BYTES:
                 await upstream.aclose()
-                raise HTTPException(status_code=413, detail=f"File too large ({n} bytes). Max is {MAX_DOWNLOAD_BYTES}.")
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File too large ({n} bytes). Max is {MAX_DOWNLOAD_BYTES}.",
+                )
         except ValueError:
             pass
 
@@ -449,7 +490,10 @@ async def download_proxy(
             total += len(chunk)
             if total > MAX_DOWNLOAD_BYTES:
                 await upstream.aclose()
-                raise HTTPException(status_code=413, detail=f"File exceeded max size ({MAX_DOWNLOAD_BYTES} bytes).")
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"File exceeded max size ({MAX_DOWNLOAD_BYTES} bytes).",
+                )
             yield chunk
         await upstream.aclose()
 
@@ -473,10 +517,14 @@ async def create_text_to_3d(
 
     if body.mode == "preview":
         if not body.prompt:
-            raise HTTPException(status_code=422, detail="prompt is required when mode=preview")
+            raise HTTPException(
+                status_code=422, detail="prompt is required when mode=preview"
+            )
     else:
         if not body.preview_task_id:
-            raise HTTPException(status_code=422, detail="preview_task_id is required when mode=refine")
+            raise HTTPException(
+                status_code=422, detail="preview_task_id is required when mode=refine"
+            )
 
     payload: dict[str, Any] = {"mode": body.mode}
 
