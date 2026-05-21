@@ -1,7 +1,7 @@
 // client.js
-const BASE = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8010";
+const BASE = import.meta.env?.VITE_API_BASE_URL || "http://127.0.0.1:8010";
 
-function pickErrorMessage(data, fallback) {
+export function pickErrorMessage(data, fallback) {
     if (!data) return fallback;
 
     // FastAPI-style
