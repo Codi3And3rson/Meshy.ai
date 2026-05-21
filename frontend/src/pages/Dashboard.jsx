@@ -13,11 +13,17 @@ import Header from "../components/Header";
 import Downloads from "../components/Downloads";
 
 // Helpers
-function detectModelUrl(taskRaw) {
+// eslint-disable-next-line react-refresh/only-export-components
+export function detectModelUrl(taskRaw) {
     if (!taskRaw) return "";
     const t = taskRaw;
     const candidates = [];
-    const push = (v) => (v && typeof v === "string" ? candidates.push(v.trim()) : null);
+    const push = (v) => {
+        if (v && typeof v === "string") {
+            const trimmed = v.trim();
+            if (trimmed) candidates.push(trimmed);
+        }
+    };
 
     const mu = t?.model_urls || t?.result?.model_urls || t?.output?.model_urls || t?.modelUrls || {};
     push(mu?.glb);
