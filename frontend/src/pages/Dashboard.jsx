@@ -235,7 +235,14 @@ export default function Dashboard() {
                             onSelect={setActiveId}
                             onRefreshActive={refreshActive}
                             onDownloadActive={downloadActivePreferred}
-                            onClearAll={() => { setTasks([]); setActiveId(""); setError(""); setLastPreviewId(""); }}
+                            onClearAll={() => {
+                                if (window.confirm("Are you sure you want to clear your task history?")) {
+                                    setTasks([]);
+                                    setActiveId("");
+                                    setError("");
+                                    setLastPreviewId("");
+                                }
+                            }}
                             busy={busy}
                         />
                     </div>
