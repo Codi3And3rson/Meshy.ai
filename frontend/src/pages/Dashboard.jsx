@@ -72,6 +72,17 @@ async function triggerBrowserDownload(blob, filename) {
 }
 
 function triggerDirectDownload(url) {
+    try {
+        const parsedUrl = new URL(url, window.location.href);
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            console.error("Security Error: Invalid URL protocol. Only http and https are allowed.");
+            return;
+        }
+    } catch {
+        console.error("Security Error: Invalid URL provided.");
+        return;
+    }
+
     const a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
