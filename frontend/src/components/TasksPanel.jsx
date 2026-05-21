@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import Tip from "./Tooltip";
 import { Download, RefreshCw, Trash2, Box, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
@@ -27,6 +28,8 @@ export default function TasksPanel({
         active.status.toLowerCase().includes("succ") &&
         (active.modelUrl || active.downloadUrl);
 
+    const reversedTasks = useMemo(() => tasks.slice().reverse(), [tasks]);
+
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -49,7 +52,7 @@ export default function TasksPanel({
                 </div>
             ) : (
                 <div className="scroll-area" style={{ maxHeight: 300, display: "grid", gap: 8, paddingRight: 4 }}>
-                    {tasks.slice().reverse().map((t) => (
+                    {reversedTasks.map((t) => (
                         <motion.button
                             key={t.id}
                             initial={{ opacity: 0, x: -10 }}
