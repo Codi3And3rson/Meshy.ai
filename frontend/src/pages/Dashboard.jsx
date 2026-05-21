@@ -49,7 +49,8 @@ function extractModelUrls(taskRaw) {
     return out;
 }
 
-function filenameFromUrl(url, fallbackName = "model.bin") {
+// eslint-disable-next-line react-refresh/only-export-components
+export function filenameFromUrl(url, fallbackName = "model.bin") {
     try {
         const u = new URL(url);
         const path = u.pathname || "";
