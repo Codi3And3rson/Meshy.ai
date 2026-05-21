@@ -1,15 +1,7 @@
 import { useMemo, useState } from "react";
 import Tip from "./Tooltip";
 import { Image as ImgIcon, Upload, Link } from "lucide-react";
-
-function fileToDataUrl(file) {
-    return new Promise((resolve, reject) => {
-        const r = new FileReader();
-        r.onerror = reject;
-        r.onload = () => resolve(r.result);
-        r.readAsDataURL(file);
-    });
-}
+import { fileToDataUrl } from "./fileUtils";
 
 export default function ImagePanel({ onSubmit, busy }) {
     const [useUpload, setUseUpload] = useState(true);
