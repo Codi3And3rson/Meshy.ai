@@ -36,7 +36,7 @@ export default function TasksPanel({
                 </div>
 
                 <Tip content="Clear the local task list (does not cancel remote tasks).">
-                    <button className="btn-danger" onClick={onClearAll} disabled={busy || tasks.length === 0} style={{ padding: '8px 12px' }}>
+                    <button aria-label="Clear task history" className="btn-danger" onClick={onClearAll} disabled={busy || tasks.length === 0} style={{ padding: '8px 12px' }}>
                         <Trash2 size={16} />
                     </button>
                 </Tip>
