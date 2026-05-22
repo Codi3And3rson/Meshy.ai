@@ -19,7 +19,8 @@ export default function TasksPanel({
     onClearAll,
     busy,
 }) {
-    const active = tasks.find((t) => t.id === activeId);
+    const tasksArray = Object.values(tasks);
+    const active = tasks[activeId];
 
     const canDownload =
         active &&
@@ -36,20 +37,20 @@ export default function TasksPanel({
                 </div>
 
                 <Tip content="Clear the local task list (does not cancel remote tasks).">
-                    <button className="btn-danger" onClick={onClearAll} disabled={busy || tasks.length === 0} style={{ padding: '8px 12px' }}>
+                    <button className="btn-danger" onClick={onClearAll} disabled={busy || tasksArray.length === 0} style={{ padding: '8px 12px' }}>
                         <Trash2 size={16} />
                     </button>
                 </Tip>
             </div>
 
-            {tasks.length === 0 ? (
+            {tasksArray.length === 0 ? (
                 <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-tertiary)', background: 'rgba(0,0,0,0.1)', borderRadius: 12 }}>
                     <Box size={24} style={{ opacity: 0.3, marginBottom: 8 }} />
                     <div style={{ fontSize: '0.9rem' }}>No active tasks</div>
                 </div>
             ) : (
                 <div className="scroll-area" style={{ maxHeight: 300, display: "grid", gap: 8, paddingRight: 4 }}>
-                    {tasks.slice().reverse().map((t) => (
+                    {tasksArray.slice().reverse().map((t) => (
                         <motion.button
                             key={t.id}
                             initial={{ opacity: 0, x: -10 }}
