@@ -9,8 +9,8 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
     const [shouldRemesh, setShouldRemesh] = useState(true);
     const [texturePrompt, setTexturePrompt] = useState("");
 
-    const canPreview = prompt.trim().length >= 4;
-    const canRefine = hasPreview && !busy;
+    const canPreview = prompt.trim().length >= 4 && prompt.length <= 600 && negative.length <= 600;
+    const canRefine = hasPreview && !busy && texturePrompt.length <= 600;
 
     return (
         <div>
@@ -32,6 +32,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                         value={prompt}
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Describe the object..."
+                        maxLength={600}
                         style={{ width: '100%', resize: 'vertical', minHeight: 80 }}
                     />
                 </div>
@@ -42,6 +43,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                         value={negative}
                         onChange={(e) => setNegative(e.target.value)}
                         placeholder="What to avoid..."
+                        maxLength={600}
                     />
                 </div>
 
@@ -108,6 +110,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                     value={texturePrompt}
                     onChange={(e) => setTexturePrompt(e.target.value)}
                     placeholder="e.g. gold trim, leather straps..."
+                    maxLength={600}
                     style={{ marginBottom: 16 }}
                 />
 
