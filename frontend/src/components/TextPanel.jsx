@@ -33,6 +33,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                         onChange={(e) => setPrompt(e.target.value)}
                         placeholder="Describe the object..."
                         style={{ width: '100%', resize: 'vertical', minHeight: 80 }}
+                        maxLength={600}
                     />
                 </div>
 
@@ -42,6 +43,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                         value={negative}
                         onChange={(e) => setNegative(e.target.value)}
                         placeholder="What to avoid..."
+                        maxLength={600}
                     />
                 </div>
 
@@ -109,6 +111,7 @@ export default function TextPanel({ onPreview, onRefine, busy, hasPreview }) {
                     onChange={(e) => setTexturePrompt(e.target.value)}
                     placeholder="e.g. gold trim, leather straps..."
                     style={{ marginBottom: 16 }}
+                    maxLength={600}
                 />
 
                 <Tip content="Refines the last preview task into a final model.">
