@@ -53,8 +53,11 @@ function filenameFromUrl(url, fallbackName = "model.bin") {
     try {
         const u = new URL(url);
         const path = u.pathname || "";
-        const last = path.split("/").filter(Boolean).pop();
-        return last || fallbackName;
+        const parts = path.split("/");
+        for (let i = parts.length - 1; i >= 0; i--) {
+            if (parts[i]) return parts[i];
+        }
+        return fallbackName;
     } catch {
         return fallbackName;
     }
