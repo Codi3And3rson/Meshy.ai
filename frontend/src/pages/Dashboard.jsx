@@ -16,24 +16,24 @@ import Downloads from "../components/Downloads";
 function detectModelUrl(taskRaw) {
     if (!taskRaw) return "";
     const t = taskRaw;
-    const candidates = [];
-    const push = (v) => (v && typeof v === "string" ? candidates.push(v.trim()) : null);
-
     const mu = t?.model_urls || t?.result?.model_urls || t?.output?.model_urls || t?.modelUrls || {};
-    push(mu?.glb);
-    push(mu?.pre_remeshed_glb);
-    push(mu?.fbx);
-    push(mu?.obj);
-    push(mu?.usdz);
 
-    push(t?.model?.download_url);
-    push(t?.model_url);
-    push(t?.result?.model_url);
-    push(t?.result?.glb);
-    push(t?.output?.glb);
-    push(t?.output?.model_url);
+    const potentialUrls = [
+        mu?.glb,
+        mu?.pre_remeshed_glb,
+        mu?.fbx,
+        mu?.obj,
+        mu?.usdz,
+        t?.model?.download_url,
+        t?.model_url,
+        t?.result?.model_url,
+        t?.result?.glb,
+        t?.output?.glb,
+        t?.output?.model_url,
+    ];
 
-    return candidates[0] || "";
+    const found = potentialUrls.find((v) => typeof v === "string" && v.trim());
+    return found ? found.trim() : "";
 }
 
 function extractModelUrls(taskRaw) {
