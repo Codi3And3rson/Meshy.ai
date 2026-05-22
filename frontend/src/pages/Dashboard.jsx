@@ -88,19 +88,19 @@ export default function Dashboard() {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
 
-    const [tasks, setTasks] = useState([]);
+    const [tasks, setTasks] = useState({});
     const [activeId, setActiveId] = useState("");
     const [pollOn, setPollOn] = useState(true);
     const [lastPreviewId, setLastPreviewId] = useState("");
 
     function upsertTask(partial) {
-        setTasks((prev) => {
-            const idx = prev.findIndex((t) => t.id === partial.id);
-            if (idx === -1) return [...prev, partial];
-            const copy = prev.slice();
-            copy[idx] = { ...copy[idx], ...partial };
-            return copy;
-        });
+        setTasks((prev) => ({
+            ...prev,
+            [partial.id]: {
+                ...(prev[partial.id] || {}),
+                ...partial,
+            }
+        }));
     }
 
     async function submitTextPreview(payload) {
@@ -141,7 +141,7 @@ export default function Dashboard() {
         } catch (e) { setError(String(e?.message || e)); } finally { setBusy(false); }
     }
 
-    const activeTask = useMemo(() => tasks.find((t) => t.id === activeId), [tasks, activeId]);
+    const activeTask = useMemo(() => tasks[activeId], [tasks, activeId]);
     const detectedModelUrl = useMemo(() => detectModelUrl(activeTask?.raw), [activeTask]);
     const modelUrls = useMemo(() => extractModelUrls(activeTask?.raw), [activeTask]);
 
@@ -235,7 +235,7 @@ export default function Dashboard() {
                             onSelect={setActiveId}
                             onRefreshActive={refreshActive}
                             onDownloadActive={downloadActivePreferred}
-                            onClearAll={() => { setTasks([]); setActiveId(""); setError(""); setLastPreviewId(""); }}
+                            onClearAll={() => { setTasks({}); setActiveId(""); setError(""); setLastPreviewId(""); }}
                             busy={busy}
                         />
                     </div>
