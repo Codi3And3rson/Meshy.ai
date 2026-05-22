@@ -1,5 +1,5 @@
 import Tip from "./Tooltip";
-import { Download, RefreshCw, Trash2, Box, Image as ImageIcon } from "lucide-react";
+import { Trash2, Box, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
 function statusBadge(status) {
