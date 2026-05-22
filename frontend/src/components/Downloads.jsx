@@ -1,4 +1,3 @@
-import React from "react";
 import Tip from "./Tooltip";
 import { Download, FileBox } from "lucide-react";
 import { motion } from "framer-motion";
