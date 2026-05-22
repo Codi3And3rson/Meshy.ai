@@ -232,6 +232,7 @@ export default function Dashboard() {
                         <TasksPanel
                             tasks={tasks}
                             activeId={activeId}
+                            activeTask={activeTask}
                             onSelect={setActiveId}
                             onRefreshActive={refreshActive}
                             onDownloadActive={downloadActivePreferred}

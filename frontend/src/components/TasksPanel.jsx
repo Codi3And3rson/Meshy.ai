@@ -13,13 +13,14 @@ function statusBadge(status) {
 export default function TasksPanel({
     tasks,
     activeId,
+    activeTask,
     onSelect,
     onRefreshActive,
     onDownloadActive,
     onClearAll,
     busy,
 }) {
-    const active = tasks.find((t) => t.id === activeId);
+    const active = activeTask;
 
     const canDownload =
         active &&
