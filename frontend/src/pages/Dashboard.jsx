@@ -191,6 +191,7 @@ export default function Dashboard() {
         if (status.includes("SUCC") || status.includes("FAIL")) return;
         const timer = setInterval(() => { refreshActive(); }, 2500);
         return () => clearInterval(timer);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pollOn, activeId, activeTask]);
 
     return (

@@ -6,8 +6,8 @@ export default function Header({ activeId, activeTask, refreshActive, busy }) {
     return (
         <header className="glass-panel topbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px' }}>
             <div>
-                <div className="title" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Dashboard</div>
-                <div className="subtitle" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                <h2 className="title" style={{ fontSize: '1.5rem', fontWeight: 800 }}>Dashboard</h2>
+                <div className="subtitle" style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }} aria-live="polite">
                     <span>Active Task:</span>
                     {activeId ? (
                         <>
@@ -29,13 +29,16 @@ export default function Header({ activeId, activeTask, refreshActive, busy }) {
             <div>
                 <Tip content="Refresh the selected task now.">
                     <button
+                        type="button"
                         className="btn-primary"
                         onClick={refreshActive}
                         disabled={busy || !activeId}
                         style={{ width: 'auto' }}
+                        aria-busy={busy}
+                        aria-label="Refresh Active Task"
                     >
-                        <RefreshCw size={18} className={busy ? "spin" : ""} style={{ animation: busy ? 'spin 1s linear infinite' : 'none' }} />
-                        Refresh
+                        <RefreshCw aria-hidden="true" size={18} className={busy ? "spin" : ""} style={{ animation: busy ? 'spin 1s linear infinite' : 'none' }} />
+                        {busy ? "Refreshing..." : "Refresh"}
                     </button>
                 </Tip>
             </div>

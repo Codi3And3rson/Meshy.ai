@@ -7,55 +7,62 @@ export default function Downloads({ modelUrls, detectedModelUrl, downloadFile, d
     const hasDownloads = Object.keys(modelUrls).length > 0;
 
     return (
-        <div className="glass-panel" style={{ padding: '24px' }}>
-            <div style={{ marginBottom: '16px' }}>
-                <p className="title" style={{ fontSize: '1.2rem' }}>Downloads</p>
+        <section aria-labelledby="downloads-title" className="glass-panel" style={{ padding: '24px' }}>
+            <header style={{ marginBottom: '16px' }}>
+                <h3 id="downloads-title" className="title" style={{ fontSize: '1.2rem' }}>Downloads</h3>
                 <p className="subtitle">
                     Available formats for this task.
                 </p>
-            </div>
+            </header>
 
             <div className="glass-panel" style={{ padding: '12px', background: 'rgba(0,0,0,0.3)', marginBottom: '16px' }}>
                 <div className="subtitle" style={{ fontSize: '0.75rem', marginBottom: '4px' }}>Detected Source URL</div>
-                <div className="mono" style={{ fontSize: '0.8rem', color: 'var(--accent)', overflowWrap: 'anywhere' }}>
+                <div className="mono" style={{ fontSize: '0.8rem', color: 'var(--accent)', overflowWrap: 'anywhere' }} aria-live="polite">
                     {detectedModelUrl || "Waiting for task completion..."}
                 </div>
             </div>
 
             {!hasDownloads ? (
                 <div style={{ textAlign: 'center', padding: '32px', color: 'var(--text-tertiary)', border: '1px dashed var(--glass-border)', borderRadius: 'var(--radius-md)' }}>
-                    <FileBox size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
-                    <div>No formats ready yet.</div>
-                    <div style={{ fontSize: '0.8rem' }}>Wait for SUCCESS status and refresh.</div>
+                    <FileBox aria-hidden="true" size={32} style={{ marginBottom: '8px', opacity: 0.5 }} />
+                    <div style={{ fontWeight: 500 }}>No formats ready yet.</div>
+                    <div style={{ fontSize: '0.8rem', marginTop: '4px' }}>Wait for SUCCESS status and refresh the task.</div>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
+                <ul style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', padding: 0, margin: 0, listStyle: 'none' }} aria-label="Available download formats">
                     {Object.entries(modelUrls).map(([k, url]) => (
-                        <Tip key={k} content={`Download ${k.toUpperCase()} file`}>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                onClick={() => downloadFile(url, k)}
-                                disabled={busy || !url}
-                                className={k === "glb" ? "btn-primary" : "btn-secondary"}
-                            >
-                                <Download size={16} /> {k.toUpperCase()}
-                            </motion.button>
-                        </Tip>
+                        <li key={k}>
+                            <Tip content={`Download ${k.toUpperCase()} file`}>
+                                <motion.button
+                                    type="button"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={() => downloadFile(url, k)}
+                                    disabled={busy || !url}
+                                    className={k === "glb" ? "btn-primary" : "btn-secondary"}
+                                    aria-busy={busy}
+                                >
+                                    <Download aria-hidden="true" size={16} /> {k.toUpperCase()}
+                                </motion.button>
+                            </Tip>
+                        </li>
                     ))}
 
-                    <Tip content="Download the preferred file (GLB when available).">
-                        <button
-                            className="btn-primary"
-                            onClick={downloadActivePreferred}
-                            disabled={busy || !(modelUrls?.glb || detectedModelUrl)}
-                            style={{ marginLeft: 'auto' }}
-                        >
-                            Auto-Download
-                        </button>
-                    </Tip>
-                </div>
+                    <li style={{ marginLeft: 'auto' }}>
+                        <Tip content="Download the preferred file (GLB when available).">
+                            <button
+                                type="button"
+                                className="btn-primary"
+                                onClick={downloadActivePreferred}
+                                disabled={busy || !(modelUrls?.glb || detectedModelUrl)}
+                                aria-busy={busy}
+                            >
+                                Auto-Download
+                            </button>
+                        </Tip>
+                    </li>
+                </ul>
             )}
-        </div>
+        </section>
     );
 }
