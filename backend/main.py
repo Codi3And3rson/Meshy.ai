@@ -518,25 +518,6 @@ async def create_text_to_3d(
     return {"result": task_id}
 
 
-# Backwards-compatible endpoint your frontend may already call
-class TextTo3DPreviewLegacyRequest(BaseModel):
-    prompt: str = Field(..., min_length=1, max_length=600)
-    negative_prompt: str | None = Field(default=None, max_length=600)
-    art_style: str | None = None
-    should_remesh: bool | None = None
-
-
-@app.post("/api/text-to-3d/preview")
-async def create_text_to_3d_preview(
-    body: TextTo3DPreviewLegacyRequest,
-    x_meshy_key: str | None = Header(default=None),
-    authorization: str | None = Header(default=None),
-):
-    d = body.model_dump(exclude_none=True)
-    req = TextTo3DRequest(mode="preview", **d)
-    return await create_text_to_3d(req, x_meshy_key, authorization)
-
-
 @app.get("/api/text-to-3d/{task_id}")
 async def get_text_to_3d_task(
     task_id: str,
