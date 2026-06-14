@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import hmac
 import json
 import os
 from typing import Any
@@ -22,6 +24,10 @@ MESHY_BASE = os.getenv("MESHY_BASE", "https://api.meshy.ai").rstrip("/")
 # Optional: set a server-side Meshy API key so you *don't* need to send keys from the browser
 # If provided, backend will always use this key (recommended for production).
 SERVER_MESHY_API_KEY = os.getenv("MESHY_API_KEY", "").strip() or None
+
+# Webhook security
+# If provided, the webhook endpoint will verify the X-Meshy-Signature header using HMAC SHA-256
+MESHY_WEBHOOK_SECRET = os.getenv("MESHY_WEBHOOK_SECRET", "").strip() or None
 
 # Networking
 HTTP_TIMEOUT_SECONDS = float(os.getenv("HTTP_TIMEOUT_SECONDS", "60"))
@@ -639,16 +645,30 @@ async def get_image_to_3d_task(
 
 # --- Webhook receiver (optional) ---
 @app.post("/api/meshy/webhook")
-async def meshy_webhook(request: Request):
+async def meshy_webhook(request: Request, x_meshy_signature: str | None = Header(default=None)):
     """
     Meshy can POST task objects to your webhook URL when statuses change.
     This endpoint simply acknowledges receipt and returns <400 to prevent auto-disable.
     """
+    raw_body = await request.body()
+
+    if MESHY_WEBHOOK_SECRET:
+        if not x_meshy_signature:
+            raise HTTPException(status_code=401, detail="Missing X-Meshy-Signature header")
+
+        expected_signature = hmac.new(
+            MESHY_WEBHOOK_SECRET.encode("utf-8"),
+            raw_body,
+            hashlib.sha256
+        ).hexdigest()
+
+        if not hmac.compare_digest(expected_signature, x_meshy_signature):
+            raise HTTPException(status_code=401, detail="Invalid X-Meshy-Signature")
+
     try:
-        payload = await request.json()
+        payload = json.loads(raw_body)
     except Exception:
-        payload = await request.body()
-        payload = payload.decode("utf-8", errors="replace")
+        payload = raw_body.decode("utf-8", errors="replace")
 
     print("[meshy-webhook]", payload)
     return {"ok": True}
