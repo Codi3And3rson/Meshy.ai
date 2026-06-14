@@ -95,11 +95,15 @@ export default function Dashboard() {
 
     function upsertTask(partial) {
         setTasks((prev) => {
-            const idx = prev.findIndex((t) => t.id === partial.id);
-            if (idx === -1) return [...prev, partial];
-            const copy = prev.slice();
-            copy[idx] = { ...copy[idx], ...partial };
-            return copy;
+            let found = false;
+            const next = prev.map((t) => {
+                if (t.id === partial.id) {
+                    found = true;
+                    return { ...t, ...partial };
+                }
+                return t;
+            });
+            return found ? next : [...prev, partial];
         });
     }
 
