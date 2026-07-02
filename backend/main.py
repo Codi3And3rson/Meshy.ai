@@ -166,6 +166,9 @@ def _validate_download_url(url: str) -> None:
         )
 
 
+_PREFERRED_ORDER = ("glb", "fbx", "obj", "usdz", "pre_remeshed_glb")
+
+
 def normalize_task(raw: dict) -> dict:
     """
     Normalize task responses so the frontend can reliably find model download URLs.
@@ -202,9 +205,8 @@ def normalize_task(raw: dict) -> dict:
                     break
 
     # Choose a default download url preference order
-    preferred_order = ["glb", "fbx", "obj", "usdz", "pre_remeshed_glb"]
     model = None
-    for fmt in preferred_order:
+    for fmt in _PREFERRED_ORDER:
         url = model_urls.get(fmt)
         if url:
             model = {"download_url": url, "format": fmt}
