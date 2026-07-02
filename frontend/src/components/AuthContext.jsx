@@ -5,13 +5,13 @@ const AuthCtx = createContext(null);
 const LS_KEY = "meshy_user_key_v1";
 
 export function AuthProvider({ children }) {
-    const [apiKey, setApiKeyState] = useState(() => localStorage.getItem(LS_KEY) || "");
+    const [apiKey, setApiKeyState] = useState(() => sessionStorage.getItem(LS_KEY) || "");
 
     function setApiKey(key) {
         const k = (key || "").trim();
         setApiKeyState(k);
-        if (k) localStorage.setItem(LS_KEY, k);
-        else localStorage.removeItem(LS_KEY);
+        if (k) sessionStorage.setItem(LS_KEY, k);
+        else sessionStorage.removeItem(LS_KEY);
     }
 
     function logout() {
