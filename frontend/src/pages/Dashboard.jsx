@@ -36,13 +36,14 @@ function detectModelUrl(taskRaw) {
     return candidates[0] || "";
 }
 
+const MODEL_KEYS = ["glb", "fbx", "obj", "usdz", "mtl", "pre_remeshed_glb"];
+
 function extractModelUrls(taskRaw) {
     if (!taskRaw) return {};
     const t = taskRaw;
     const mu = t?.model_urls || t?.result?.model_urls || t?.output?.model_urls || t?.modelUrls || {};
-    const keys = ["glb", "fbx", "obj", "usdz", "mtl", "pre_remeshed_glb"];
     const out = {};
-    for (const k of keys) {
+    for (const k of MODEL_KEYS) {
         const v = mu?.[k];
         if (typeof v === "string" && v.trim()) out[k] = v.trim();
     }
