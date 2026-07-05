@@ -26,6 +26,7 @@ function pickErrorMessage(data, fallback) {
 export async function apiFetch(path, { apiKey, method = "GET", body, headers } = {}) {
     const res = await fetch(`${BASE}${path}`, {
         method,
+        credentials: "include",
         headers: {
             Accept: "application/json",
             "Content-Type": "application/json",

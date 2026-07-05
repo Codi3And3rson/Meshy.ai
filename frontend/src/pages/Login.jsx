@@ -6,19 +6,27 @@ import { KeyRound, ShieldCheck, ArrowRight, Box } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Login() {
-  const { apiKey, setApiKey } = useAuth();
-  const [key, setKey] = useState(apiKey || "");
+  const { setApiKey } = useAuth();
+  const [key, setKey] = useState("");
   const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(false);
   const nav = useNavigate();
 
-  function submit() {
+  async function submit() {
     const k = key.trim();
     if (k.length < 10) {
       setErr("Invalid API key format");
       return;
     }
-    setApiKey(k);
-    nav("/");
+    setLoading(true);
+    try {
+      await setApiKey(k);
+      nav("/");
+    } catch (e) {
+      setErr(e.message || "Failed to login");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -80,8 +88,8 @@ export default function Login() {
           </motion.div>
         )}
 
-        <button className="btn-primary" onClick={submit} style={{ width: "100%", padding: 12, fontSize: "1rem" }}>
-          Continue <ArrowRight size={18} />
+        <button className="btn-primary" onClick={submit} disabled={loading} style={{ width: "100%", padding: 12, fontSize: "1rem" }}>
+          {loading ? "Authenticating..." : <>Continue <ArrowRight size={18} /></>}
         </button>
 
         <div style={{ textAlign: "center", borderTop: "1px solid var(--glass-border)", paddingTop: 20 }}>
@@ -89,7 +97,7 @@ export default function Login() {
             <ShieldCheck size={12} /> Secure Storage
           </div>
           <p className="mono" style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: 12 }}>
-            Keys are stored locally and never sent to our servers.
+            Keys are stored securely in HttpOnly cookies and never sent to third parties.
           </p>
         </div>
       </motion.div>
