@@ -11,7 +11,7 @@ load_dotenv()
 from urllib.parse import urlparse, unquote
 
 import httpx
-from fastapi import FastAPI, Header, HTTPException, Request, Query
+from fastapi import FastAPI, Header, HTTPException, Request, Query, Cookie, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
@@ -97,12 +97,15 @@ def _extract_bearer_token(authorization: str | None) -> str | None:
     return a
 
 
-def _require_api_key(x_meshy_key: str | None, authorization: str | None) -> str:
+def _require_api_key(
+    x_meshy_key: str | None, authorization: str | None, meshy_api_key: str | None = None
+) -> str:
     """
     Priority:
       1) SERVER_MESHY_API_KEY (if set)
       2) Authorization: Bearer <key> (if provided by caller)
-      3) X-Meshy-Key (dev/local)
+      3) Cookie: meshy_api_key
+      4) X-Meshy-Key (dev/local)
     """
     if SERVER_MESHY_API_KEY:
         return SERVER_MESHY_API_KEY
@@ -111,12 +114,15 @@ def _require_api_key(x_meshy_key: str | None, authorization: str | None) -> str:
     if bearer:
         return bearer
 
+    if meshy_api_key and meshy_api_key.strip():
+        return meshy_api_key.strip()
+
     if not x_meshy_key or not x_meshy_key.strip():
         raise HTTPException(
             status_code=401,
             detail=(
-                "Missing API key. Provide it in the X-Meshy-Key header (dev) "
-                "or set MESHY_API_KEY on the server (prod)."
+                "Missing API key. Provide it via secure HttpOnly cookie (login), "
+                "X-Meshy-Key header (dev) or set MESHY_API_KEY on the server (prod)."
             ),
         )
     return x_meshy_key.strip()
@@ -359,6 +365,30 @@ async def add_security_headers(request: Request, call_next):
 
 
 # ---------- Routes ----------
+
+class LoginRequest(BaseModel):
+    api_key: str = Field(..., min_length=1)
+
+@app.post("/api/auth/login")
+async def login(body: LoginRequest, response: Response):
+    """Stores the Meshy API key in a secure HttpOnly cookie."""
+    response.set_cookie(
+        key="meshy_api_key",
+        value=body.api_key.strip(),
+        httponly=True,
+        samesite="lax",
+        secure=False,  # Set to False to allow local dev without HTTPS
+        max_age=60 * 60 * 24 * 30,  # 30 days
+    )
+    return {"ok": True}
+
+@app.post("/api/auth/logout")
+async def logout(response: Response):
+    """Clears the Meshy API key cookie."""
+    response.delete_cookie("meshy_api_key")
+    return {"ok": True}
+
+
 @app.get("/api/health")
 async def health():
     return {
@@ -380,8 +410,9 @@ async def health():
 async def balance(
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
-    api_key = _require_api_key(x_meshy_key, authorization)
+    api_key = _require_api_key(x_meshy_key, authorization, meshy_api_key)
     client: httpx.AsyncClient = app.state.http
 
     resp = await _request_with_retries(
@@ -468,8 +499,9 @@ async def create_text_to_3d(
     body: TextTo3DRequest,
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
-    api_key = _require_api_key(x_meshy_key, authorization)
+    api_key = _require_api_key(x_meshy_key, authorization, meshy_api_key)
 
     if body.mode == "preview":
         if not body.prompt:
@@ -531,10 +563,11 @@ async def create_text_to_3d_preview(
     body: TextTo3DPreviewLegacyRequest,
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
     d = body.model_dump(exclude_none=True)
     req = TextTo3DRequest(mode="preview", **d)
-    return await create_text_to_3d(req, x_meshy_key, authorization)
+    return await create_text_to_3d(req, x_meshy_key, authorization, meshy_api_key)
 
 
 @app.get("/api/text-to-3d/{task_id}")
@@ -542,8 +575,9 @@ async def get_text_to_3d_task(
     task_id: str,
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
-    api_key = _require_api_key(x_meshy_key, authorization)
+    api_key = _require_api_key(x_meshy_key, authorization, meshy_api_key)
     client: httpx.AsyncClient = app.state.http
 
     resp = await _request_with_retries(
@@ -564,8 +598,9 @@ async def create_image_to_3d(
     body: ImageTo3DRequest,
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
-    api_key = _require_api_key(x_meshy_key, authorization)
+    api_key = _require_api_key(x_meshy_key, authorization, meshy_api_key)
 
     # Guard extremely large base64 payloads
     if body.image_url.startswith("data:") and len(body.image_url) > MAX_DATA_URL_CHARS:
@@ -621,8 +656,9 @@ async def get_image_to_3d_task(
     task_id: str,
     x_meshy_key: str | None = Header(default=None),
     authorization: str | None = Header(default=None),
+    meshy_api_key: str | None = Cookie(default=None),
 ):
-    api_key = _require_api_key(x_meshy_key, authorization)
+    api_key = _require_api_key(x_meshy_key, authorization, meshy_api_key)
     client: httpx.AsyncClient = app.state.http
 
     resp = await _request_with_retries(

@@ -1,23 +1,31 @@
 import { createContext, useContext, useMemo, useState } from "react";
+import { apiFetch } from "../api/client";
 
 const AuthCtx = createContext(null);
-const LS_KEY = "meshy_user_key_v1";
+const LS_AUTH_FLAG = "meshy_is_authed";
 
 export function AuthProvider({ children }) {
-  const [apiKey, setApiKeyState] = useState(() => localStorage.getItem(LS_KEY) || "");
+  const [isAuthed, setIsAuthed] = useState(() => localStorage.getItem(LS_AUTH_FLAG) === "true");
 
-  function setApiKey(key) {
+  async function setApiKey(key) {
     const k = (key || "").trim();
-    setApiKeyState(k);
-    if (k) localStorage.setItem(LS_KEY, k);
-    else localStorage.removeItem(LS_KEY);
+    if (k) {
+        await apiFetch("/api/auth/login", { method: "POST", body: { api_key: k } });
+        localStorage.setItem(LS_AUTH_FLAG, "true");
+        setIsAuthed(true);
+    } else {
+        await apiFetch("/api/auth/logout", { method: "POST" });
+        localStorage.removeItem(LS_AUTH_FLAG);
+        setIsAuthed(false);
+    }
   }
 
-  function logout() {
-    setApiKey("");
+  async function logout() {
+    await setApiKey("");
   }
 
-  const value = useMemo(() => ({ apiKey, setApiKey, logout, isAuthed: !!apiKey }), [apiKey]);
+  // We set apiKey: undefined to fall back to cookies in apiFetch requests
+  const value = useMemo(() => ({ apiKey: undefined, setApiKey, logout, isAuthed }), [isAuthed]);
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;
 }
 
