@@ -89,7 +89,7 @@ export default function Login() {
             <ShieldCheck size={12} /> Secure Storage
           </div>
           <p className="mono" style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: 12 }}>
-            Keys are stored locally and never sent to our servers.
+            Keys are securely stored in memory and never sent to our servers.
           </p>
         </div>
       </motion.div>
