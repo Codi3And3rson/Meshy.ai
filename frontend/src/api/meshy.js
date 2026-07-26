@@ -1,5 +1,5 @@
 // meshy.js
-import { apiFetch } from "./client";
+import { apiFetch } from "./client.js";
 
 export const meshy = {
     // -------------------------
