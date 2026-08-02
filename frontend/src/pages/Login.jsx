@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Tip from "../components/Tooltip";
-import { KeyRound, ShieldCheck, ArrowRight, Box } from "lucide-react";
+import { ShieldCheck, ArrowRight, Box } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Login() {
