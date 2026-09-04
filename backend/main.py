@@ -414,7 +414,8 @@ async def download_proxy(
     client: httpx.AsyncClient = app.state.http_stream
 
     try:
-        upstream = await client.stream("GET", url, headers={"Accept": "*/*"})
+        req = client.build_request("GET", url, headers={"Accept": "*/*"})
+        upstream = await client.send(req, stream=True)
     except (httpx.TimeoutException, httpx.TransportError) as exc:
         raise HTTPException(status_code=502, detail=f"Upstream download error: {exc!s}") from exc
 
