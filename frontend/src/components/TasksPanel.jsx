@@ -1,12 +1,13 @@
 import Tip from "./Tooltip";
-import { Download, RefreshCw, Trash2, Box, Image as ImageIcon } from "lucide-react";
-import { motion } from "framer-motion";
+import { Trash2, Box, Image as ImageIcon } from "lucide-react";
 
 function statusBadge(status) {
     const s = (status || "").toUpperCase();
     if (s.includes("SUCC")) return <span className="badge badge-success">SUCCEEDED</span>;
     if (s.includes("FAIL")) return <span className="badge badge-danger">FAILED</span>;
-    if (s.includes("RUN") || s.includes("PROC")) return <span className="badge badge-warn">RUNNING</span>;
+    if (s.includes("RUN") || s.includes("PROC") || s.includes("PEND") || s.includes("CREAT")) {
+        return <span className="badge badge-warn">PROCESSING</span>;
+    }
     return <span className="badge badge-def">{status || "UNKNOWN"}</span>;
 }
 
@@ -14,19 +15,9 @@ export default function TasksPanel({
     tasks,
     activeId,
     onSelect,
-    onRefreshActive,
-    onDownloadActive,
     onClearAll,
     busy,
 }) {
-    const active = tasks.find((t) => t.id === activeId);
-
-    const canDownload =
-        active &&
-        active.status &&
-        active.status.toLowerCase().includes("succ") &&
-        (active.modelUrl || active.downloadUrl);
-
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
@@ -35,7 +26,7 @@ export default function TasksPanel({
                     <p className="subtitle">Previous generations in this session</p>
                 </div>
 
-                <Tip content="Clear the local task list (does not cancel remote tasks).">
+                <Tip content="Clear local task history">
                     <button className="btn-danger" onClick={onClearAll} disabled={busy || tasks.length === 0} style={{ padding: '8px 12px' }}>
                         <Trash2 size={16} />
                     </button>
@@ -50,10 +41,8 @@ export default function TasksPanel({
             ) : (
                 <div className="scroll-area" style={{ maxHeight: 300, display: "grid", gap: 8, paddingRight: 4 }}>
                     {tasks.slice().reverse().map((t) => (
-                        <motion.button
+                        <button
                             key={t.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
                             onClick={() => onSelect(t.id)}
                             className="glass-panel"
                             style={{
@@ -82,7 +71,7 @@ export default function TasksPanel({
                                 </div>
                                 <div>{statusBadge(t.status)}</div>
                             </div>
-                        </motion.button>
+                        </button>
                     ))}
                 </div>
             )}
