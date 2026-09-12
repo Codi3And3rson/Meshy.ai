@@ -44,6 +44,19 @@
   --ease-elastic: cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
+[data-theme="light"] {
+  color-scheme: light;
+  --bg-dark: #f8fafc;
+  --bg-code: #f1f5f9;
+  --glass-base: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-highlight: rgba(0, 0, 0, 0.02);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
 * { box-sizing: border-box; }
 
 body {
@@ -58,11 +71,12 @@ body {
   background-attachment: fixed;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* --- Utilities --- */
 a { color: var(--accent); text-decoration: none; transition: color 0.2s; }
-a:hover { color: #fff; text-shadow: 0 0 8px var(--accent-glow); }
+a:hover { color: var(--primary); text-shadow: 0 0 8px var(--accent-glow); }
 
 /* Typography */
 h1, h2, h3, .title {
@@ -94,7 +108,7 @@ h1, h2, h3, .title {
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
 }
 
 /* Buttons */
@@ -117,11 +131,11 @@ button {
 button.btn-secondary {
   background: rgba(255, 255, 255, 0.05);
   color: var(--text-secondary);
-  border: 1px solid transparent;
+  border: 1px solid var(--glass-border);
 }
 button.btn-secondary:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.1);
-  color: #fff;
+  color: var(--text-primary);
   transform: translateY(-1px);
 }
 
@@ -143,6 +157,7 @@ button.btn-primary:active:not(:disabled) {
 button.btn-danger {
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
 }
 button.btn-danger:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.2);
@@ -182,6 +197,9 @@ input:focus, select:focus, textarea:focus {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 .badge-def { background: rgba(255,255,255,0.1); color: var(--text-secondary); }
 .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); border-color: rgba(16, 185, 129, 0.2); }

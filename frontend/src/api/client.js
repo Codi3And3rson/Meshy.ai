@@ -55,7 +55,16 @@ export async function apiFetch(path, { apiKey, method = "GET", body, headers } =
 }
 
 export async function apiDownload(url) {
-    const res = await fetch(url);
+    let downloadUrl = url;
+    if (
+        typeof url === "string" &&
+        (url.startsWith("http://") || url.startsWith("https://")) &&
+        !url.includes("/api/download")
+    ) {
+        downloadUrl = `${BASE}/api/download?url=${encodeURIComponent(url)}`;
+    }
+
+    const res = await fetch(downloadUrl);
     if (!res.ok) throw new Error(`Download failed (${res.status})`);
     return await res.blob();
 }

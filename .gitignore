@@ -38,11 +38,19 @@ package-lock.json
 .env.local
 .env.*.local
 
-# IDEs
+# IDEs and Editors
 .idea/
 .vscode/
+.vs/
 *.swp
 *.swo
+*.code-workspace
+
+# Testing / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+pnpm-lock.yaml
 
 # OS config files
 .DS_Store

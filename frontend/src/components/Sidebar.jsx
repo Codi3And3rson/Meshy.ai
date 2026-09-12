@@ -1,9 +1,20 @@
-import React from "react";
-import { LogOut, Moon, TimerReset, Sparkles, Image as ImageIcon, Type, Box } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Moon, Sun, TimerReset, Image as ImageIcon, Type, Box } from "lucide-react";
 import Tip from "./Tooltip";
-import { motion } from "framer-motion";
 
-export default function Sidebar({ mode, setMode, pollOn, setPollOn, lastPreviewId, error, logout, busy }) {
+export default function Sidebar({ mode, setMode, pollOn, setPollOn, lastPreviewId, error, logout }) {
+  const [theme, setTheme] = useState("dark");
+
+  function toggleTheme() {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    if (next === "light") {
+      document.documentElement.setAttribute("data-theme", "light");
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  }
+
   return (
     <aside className="glass-panel" style={{ display: 'flex', flexDirection: 'column', padding: '20px', gap: '16px', height: '100%' }}>
       
@@ -49,7 +60,7 @@ export default function Sidebar({ mode, setMode, pollOn, setPollOn, lastPreviewI
           <Tip content="Auto-refresh status while a task is running.">
             <button
               onClick={() => setPollOn((v) => !v)}
-              className={pollOn ? "btn-secondary" : "btn-secondary"}
+              className="btn-secondary"
               style={{ 
                 justifyContent: 'space-between', 
                 borderColor: pollOn ? 'var(--success)' : 'transparent',
@@ -77,9 +88,7 @@ export default function Sidebar({ mode, setMode, pollOn, setPollOn, lastPreviewI
 
         {/* Error Display */}
         {error && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+          <div
             className="glass-panel"
             style={{ 
               padding: '12px', 
@@ -89,15 +98,18 @@ export default function Sidebar({ mode, setMode, pollOn, setPollOn, lastPreviewI
           >
              <div style={{ fontWeight: 600, color: 'var(--danger)', fontSize: '0.9rem', marginBottom: '4px' }}>Error</div>
              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{error}</div>
-          </motion.div>
+          </div>
         )}
       </div>
 
       {/* Footer Actions */}
       <div style={{ display: 'flex', gap: '8px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
-        <button className="btn-secondary" style={{ flex: 1 }} disabled>
-          <Moon size={16} /> Theme
-        </button>
+        <Tip content={`Switch to ${theme === "dark" ? "Light" : "Dark"} theme`}>
+          <button className="btn-secondary" onClick={toggleTheme} style={{ flex: 1 }}>
+            {theme === "dark" ? <Sun size={16} /> : <Moon size={16} />}
+            {theme === "dark" ? "Light" : "Dark"}
+          </button>
+        </Tip>
         <button className="btn-danger" onClick={logout} style={{ flex: 1 }}>
           <LogOut size={16} /> Logout
         </button>

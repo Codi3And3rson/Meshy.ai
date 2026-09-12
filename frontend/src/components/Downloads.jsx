@@ -1,10 +1,8 @@
-import React from "react";
 import Tip from "./Tooltip";
 import { Download, FileBox } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function Downloads({ modelUrls, detectedModelUrl, downloadFile, downloadActivePreferred, busy }) {
-    const hasDownloads = Object.keys(modelUrls).length > 0;
+    const hasDownloads = Object.keys(modelUrls || {}).length > 0;
 
     return (
         <div className="glass-panel" style={{ padding: '24px' }}>
@@ -32,15 +30,13 @@ export default function Downloads({ modelUrls, detectedModelUrl, downloadFile, d
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px' }}>
                     {Object.entries(modelUrls).map(([k, url]) => (
                         <Tip key={k} content={`Download ${k.toUpperCase()} file`}>
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                            <button
                                 onClick={() => downloadFile(url, k)}
                                 disabled={busy || !url}
                                 className={k === "glb" ? "btn-primary" : "btn-secondary"}
                             >
                                 <Download size={16} /> {k.toUpperCase()}
-                            </motion.button>
+                            </button>
                         </Tip>
                     ))}
 

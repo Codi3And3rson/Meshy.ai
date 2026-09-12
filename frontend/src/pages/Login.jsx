@@ -2,8 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import Tip from "../components/Tooltip";
-import { KeyRound, ShieldCheck, ArrowRight, Box } from "lucide-react";
-import { motion } from "framer-motion";
+import { ShieldCheck, ArrowRight, Box } from "lucide-react";
 
 export default function Login() {
   const { apiKey, setApiKey } = useAuth();
@@ -29,10 +28,7 @@ export default function Login() {
       justifyContent: "center",
       padding: 16
     }}>
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4 }}
+      <div
         className="glass-panel"
         style={{ width: "100%", maxWidth: 440, padding: 32, display: 'flex', flexDirection: 'column', gap: 24 }}
       >
@@ -63,9 +59,7 @@ export default function Login() {
         </div>
 
         {err && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
+          <div
             style={{
               padding: 12,
               borderRadius: 8,
@@ -77,7 +71,7 @@ export default function Login() {
             }}
           >
             {err}
-          </motion.div>
+          </div>
         )}
 
         <button className="btn-primary" onClick={submit} style={{ width: "100%", padding: 12, fontSize: "1rem" }}>
@@ -89,10 +83,10 @@ export default function Login() {
             <ShieldCheck size={12} /> Secure Storage
           </div>
           <p className="mono" style={{ fontSize: "0.7rem", color: "var(--text-tertiary)", marginTop: 12 }}>
-            Keys are stored locally and never sent to our servers.
+            Keys are stored locally and never sent to third-party servers.
           </p>
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }

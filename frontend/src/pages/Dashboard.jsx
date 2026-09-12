@@ -1,5 +1,5 @@
 // Dashboard.jsx
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import TextPanel from "../components/TextPanel";
 import ImagePanel from "../components/ImagePanel";
@@ -7,7 +7,7 @@ import TasksPanel from "../components/TasksPanel";
 import { meshy } from "../api/meshy";
 import { apiDownload } from "../api/client";
 
-// New Components
+// Layout Components
 import Sidebar from "../components/Sidebar";
 import Header from "../components/Header";
 import Downloads from "../components/Downloads";
@@ -145,7 +145,7 @@ export default function Dashboard() {
     const detectedModelUrl = useMemo(() => detectModelUrl(activeTask?.raw), [activeTask]);
     const modelUrls = useMemo(() => extractModelUrls(activeTask?.raw), [activeTask]);
 
-    async function refreshActive() {
+    const refreshActive = useCallback(async () => {
         if (!activeTask) return;
         setBusy(true);
         setError("");
@@ -162,7 +162,7 @@ export default function Dashboard() {
                 setLastPreviewId(activeTask.id);
             }
         } catch (e) { setError(String(e?.message || e)); } finally { setBusy(false); }
-    }
+    }, [activeTask, apiKey]);
 
     async function downloadFile(url, keyHint) {
         if (!url) return;
@@ -191,7 +191,7 @@ export default function Dashboard() {
         if (status.includes("SUCC") || status.includes("FAIL")) return;
         const timer = setInterval(() => { refreshActive(); }, 2500);
         return () => clearInterval(timer);
-    }, [pollOn, activeId, activeTask]);
+    }, [pollOn, activeTask, refreshActive]);
 
     return (
         <div className="layout-grid">
@@ -203,7 +203,6 @@ export default function Dashboard() {
                 lastPreviewId={lastPreviewId}
                 error={error}
                 logout={logout}
-                busy={busy}
             />
 
             <section className="scroll-area">
@@ -233,8 +232,6 @@ export default function Dashboard() {
                             tasks={tasks}
                             activeId={activeId}
                             onSelect={setActiveId}
-                            onRefreshActive={refreshActive}
-                            onDownloadActive={downloadActivePreferred}
                             onClearAll={() => { setTasks([]); setActiveId(""); setError(""); setLastPreviewId(""); }}
                             busy={busy}
                         />
