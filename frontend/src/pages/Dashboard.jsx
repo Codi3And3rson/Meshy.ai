@@ -72,6 +72,17 @@ async function triggerBrowserDownload(blob, filename) {
 }
 
 function triggerDirectDownload(url) {
+    try {
+        const parsed = new URL(url);
+        if (!["http:", "https:", "blob:"].includes(parsed.protocol)) {
+            console.error("Blocked unsafe download URL:", url);
+            return;
+        }
+    } catch {
+        // If it's not a valid URL or blob, we block it just to be safe
+        console.error("Blocked invalid download URL:", url);
+        return;
+    }
     const a = document.createElement("a");
     a.href = url;
     a.target = "_blank";
