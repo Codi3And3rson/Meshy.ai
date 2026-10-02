@@ -1,7 +1,7 @@
 from unittest.mock import patch
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app, normalize_task
+from backend.main import app, normalize_task, _extract_bearer_token
 
 
 @pytest.fixture
@@ -70,3 +70,13 @@ def test_invalid_download_url_scheme(client):
         "/api/download", params={"url": "ftp://assets.meshy.ai/file.glb"}
     )
     assert response.status_code == 400
+
+def test_extract_bearer_token():
+    assert _extract_bearer_token(None) is None
+    assert _extract_bearer_token("") is None
+    assert _extract_bearer_token("   ") is None
+    assert _extract_bearer_token("Bearer token123") == "token123"
+    assert _extract_bearer_token("bearer token123") == "token123"
+    assert _extract_bearer_token("token123") == "token123"
+    # The edge case we specifically want to test
+    assert _extract_bearer_token("Bearer ") is None
